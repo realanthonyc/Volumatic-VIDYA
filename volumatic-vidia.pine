@@ -5,7 +5,7 @@
 // ------------------------------------------------------------
 //  Volumatic VIDYA (Variable Index Dynamic Average)
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.1.2
+//  v1.1.6
 // ------------------------------------------------------------
 indicator('Volumatic VIDYA', 'Volumatic VIDYA', overlay = true, max_lines_count = 500, max_labels_count = 500)
 
@@ -103,14 +103,14 @@ bool pivot_low = not na(ta.pivotlow(close, pivot_left_bars, pivot_right_bars))
 
 // Create and store lines for pivot lows (support zones)
 if low[pivot_right_bars] > smoothed_value and pivot_low
-    pivot_line := line.new(bar_index[pivot_right_bars], low[pivot_right_bars], bar_index[pivot_right_bars] + 5, low[pivot_right_bars], color = color.new(up_trend_color, 50))
+    pivot_line := line.new(bar_index[pivot_right_bars], low[pivot_right_bars], bar_index[pivot_right_bars] + 5, low[pivot_right_bars], color = color.new(up_trend_color, 80))
     liquidity_lines_low.push(pivot_line)
     // Use 0 if volume is na
     volume_value := na(volume) ? 0.0 : math.sum(volume, pivot_right_bars + pivot_left_bars) / (pivot_right_bars + pivot_left_bars)
 
 // Create and store lines for pivot highs (resistance zones)
 if high[pivot_right_bars] < smoothed_value and pivot_high
-    pivot_line := line.new(bar_index[pivot_right_bars], high[pivot_right_bars], bar_index[pivot_right_bars] + 5, high[pivot_right_bars], color = color.new(down_trend_color, 50))
+    pivot_line := line.new(bar_index[pivot_right_bars], high[pivot_right_bars], bar_index[pivot_right_bars] + 5, high[pivot_right_bars], color = color.new(down_trend_color, 80))
     liquidity_lines_high.push(pivot_line)
     // Use 0 if volume is na
     volume_value := na(volume) ? 0.0 : math.sum(-volume, pivot_right_bars + pivot_left_bars) / (pivot_right_bars + pivot_left_bars)
@@ -148,7 +148,7 @@ string delta_volume = (na(avg_volume_delta) or avg_volume_delta == 0) ? '0%' : s
 // PLOT
 // Display labels for volume and trend statistics on the last bar
 if barstate.islast
-    label.delete(label.new(bar_index, smoothed_value, 'Buy: ' + str.tostring(up_trend_volume, format.volume) + '\n Sell: ' + str.tostring(down_trend_volume, format.volume) + '\n Delta Vol: ' + delta_volume, color = color.new(trend_color, 90), style = is_trend_up ? label.style_label_upper_left : label.style_label_lower_left, textcolor = chart.fg_color, size = size.small)[1])
+    label.delete(label.new(bar_index, smoothed_value, 'Buy: ' + str.tostring(up_trend_volume, format.volume) + '\n Sell: ' + str.tostring(down_trend_volume, format.volume) + '\n Delta: ' + delta_volume, color = color.new(trend_color, 90), style = is_trend_up ? label.style_label_upper_left : label.style_label_lower_left, textcolor = chart.fg_color, size = size.small)[1])
     label.delete(label.new(bar_index, smoothed_value, text = '●', color = color.rgb(0, 0, 0, 100), textcolor = trend_color, style = label.style_label_center, size = size.small)[1])
 
 // Plot the VIDYA trend line
