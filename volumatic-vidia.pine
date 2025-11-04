@@ -5,7 +5,7 @@
 // ------------------------------------------------------------
 //  Volumatic VIDYA (Variable Index Dynamic Average)
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.1.6
+//  v1.1.8
 // ------------------------------------------------------------
 indicator('Volumatic VIDYA', 'Volumatic VIDYA', overlay = true, max_lines_count = 500, max_labels_count = 500)
 
@@ -27,7 +27,7 @@ color up_trend_color = input(#17dfad, 'Uptrend', group = 'Colors', inline = 'c')
 color down_trend_color = input(#dd326b, 'Downtrend', group = 'Colors', inline = 'c')
 bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors')
 color fill_transparent_color = input.color(#FFFFFF00, 'Fill Transparent Color', group = 'Colors')
-color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 25), 'Volume Label Background', group = 'Colors')
+color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label Background', group = 'Colors')
 
 // Initialize variables for line, volume, and trend state
 var line pivot_line = na // Variable for storing line references
@@ -39,7 +39,7 @@ var bool is_trend_up = false // Boolean variable for tracking trend direction
 var array<line> liquidity_lines_low = array.new<line>(500) // Array for storing lines for lows
 var array<line> liquidity_lines_high = array.new<line>(500) // Array for storing lines for highs
 
-// Modified: Initialize volume counters to 0.0 instead of na to prevent na propagation
+// Initialize volume counters to 0.0 instead of na to prevent na propagation
 var float up_trend_volume = 0.0
 var float down_trend_volume = 0.0
 
