@@ -1,15 +1,17 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
-// © Anthony C. https://x.com/anthonycxc
+// © realanthonyc https://www.tradingview.com/u/realanthonyc
 
 //@version=6
-// ------------------------------------------------------------
-//  Volumatic VIDYA (Variable Index Dynamic Average)
+// ------------------------------------------------------------------
+//  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.1.8
-// ------------------------------------------------------------
-indicator('Volumatic VIDYA', 'Volumatic VIDYA', overlay = true, max_lines_count = 500, max_labels_count = 500)
+//  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
+//  v1.5.2
+// ------------------------------------------------------------------
+indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
-// INPUTS
+// === INPUTS ===
+
 // Input parameters for length, momentum, and source data
 int vidya_length = input.int(10, 'VIDYA Length') // Length of the VIDYA calculation
 int vidya_momentum = input.int(20, 'VIDYA Momentum') // Momentum length for VIDYA
@@ -18,16 +20,19 @@ float band_distance = input.float(2, 'Distance factor for upper/lower bands', st
 // Define pivot parameters
 int pivot_bars = input.int(3, 'Pivot Bars') // User-configurable pivot strength
 int pivot_left_bars = pivot_bars
-int pivot_right_bars = pivot_left_bars
+int pivot_right_bars = pivot_bars
 
 float source = input.source(close, 'Source') // Source for VIDYA calculation
 
+// Optimization: Max number of liquidity lines to keep (prevents memory bloat)
+int max_liquidity_lines = input.int(50, 'Max Liquidity Lines', minval=10, maxval=200)
+
 // Define Colors
-color up_trend_color = input(#17dfad, 'Uptrend', group = 'Colors', inline = 'c')
-color down_trend_color = input(#dd326b, 'Downtrend', group = 'Colors', inline = 'c')
-bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors')
-color fill_transparent_color = input.color(#FFFFFF00, 'Fill Transparent Color', group = 'Colors')
-color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label Background', group = 'Colors')
+color up_trend_color = input.color(#17dfad, 'Uptrend', group = 'Colors', inline = 'c') // Color for uptrend
+color down_trend_color = input.color(#dd326b, 'Downtrend', group = 'Colors', inline = 'c') // Color for downtrend
+bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors') // Enable/disable shadow fill
+color fill_transparent_color = input.color(#FFFFFF00, 'Fill Transparent Color', group = 'Colors') // Editable transparent color for fill gradient
+color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label Background', group = 'Colors') // Background color for volume labels
 
 // Initialize variables for line, volume, and trend state
 var line pivot_line = na // Variable for storing line references
@@ -36,14 +41,15 @@ float smoothed_value = na // Smoothing variable for VIDYA trend levels
 var bool is_trend_up = false // Boolean variable for tracking trend direction
 
 // Initialize arrays for storing line and volume information
-var array<line> liquidity_lines_low = array.new<line>(500) // Array for storing lines for lows
-var array<line> liquidity_lines_high = array.new<line>(500) // Array for storing lines for highs
+var array<line> liquidity_lines_low = array.new<line>() // Array for storing lines for lows
+var array<line> liquidity_lines_high = array.new<line>() // Array for storing lines for highs
 
 // Initialize volume counters to 0.0 instead of na to prevent na propagation
 var float up_trend_volume = 0.0
 var float down_trend_volume = 0.0
 
-// FUNCTIONS
+// === FUNCTIONS ===
+
 // Define VIDYA function
 vidya_calc(src, vidya_length, vidya_momentum) =>
     float momentum = ta.change(src)
@@ -55,24 +61,32 @@ vidya_calc(src, vidya_length, vidya_momentum) =>
     vidya_value := alpha * abs_cmo / 100 * src + (1 - alpha * abs_cmo / 100) * nz(vidya_value[1])
     ta.sma(vidya_value, 15)
 
-// Method to extend lines and add labels for liquidity levels
+// Method to safely push lines and limit array size
+method safe_push(array<line> line_array, line new_line) =>
+    line_array.push(new_line)
+    if line_array.size() > max_liquidity_lines
+        line.delete(line_array.shift())
+
+// Method to extend lines and add labels for liquidity levels (single 'if' for loop)
 method extend_liquidity_lines(array<line> line_array, float price_level, bool is_cross, volume_val) =>
     if line_array.size() > 0 and last_bar_index - bar_index < 5000
-        for i = 0 to line_array.size() - 1 by 1
-            if i < line_array.size()
-                line liquidity_line = line_array.get(i)
-                float current_line_level = line.get_y2(liquidity_line)
-                bool price_cross = is_cross ? price_level < current_line_level and price_level[1] >= current_line_level : price_level > current_line_level and price_level[1] <= current_line_level
-                bool is_short_line = bar_index - line.get_x1(liquidity_line) < 50
-                if price_cross and is_short_line
-                    line.set_x2(liquidity_line, bar_index)
-                    line_array.remove(i)
-                    // Add volume label to the liquidity zone
-                    label.new(bar_index - 1, price_level[1], str.tostring(volume_val, format.volume), color = volume_label_bg_color, style = is_cross ? label.style_label_lower_left : label.style_label_upper_left, textcolor = chart.fg_color, size = size.small)
-                    // Add a circle label to represent liquidity zone
-                    label.new(bar_index - 1, price_level[1], text = '◉', color = color.rgb(0, 0, 0, 100), textcolor = is_cross ? down_trend_color : up_trend_color, style = label.style_label_center, size = size.normal)
+        int i = line_array.size() - 1
+        while i >= 0
+            line liquidity_line = line_array.get(i)
+            float current_line_level = line.get_y2(liquidity_line)
+            bool price_cross = is_cross ? price_level < current_line_level and price_level[1] >= current_line_level : price_level > current_line_level and price_level[1] <= current_line_level
+            bool is_short_line = bar_index - line.get_x1(liquidity_line) < 50
+            if price_cross and is_short_line
+                line.set_x2(liquidity_line, bar_index)
+                line_array.remove(i)
+                // Add volume label to the liquidity zone
+                label.new(bar_index - 1, price_level[1], str.tostring(volume_val, format.volume), color = volume_label_bg_color, style = is_cross ? label.style_label_lower_left : label.style_label_upper_left, textcolor = chart.fg_color, size = size.small)
+                // Add a circle label to represent liquidity zone
+                label.new(bar_index - 1, price_level[1], text = '◉', color = color.rgb(0, 0, 0, 100), textcolor = is_cross ? down_trend_color : up_trend_color, style = label.style_label_center, size = size.normal)
+            i -= 1
 
-// CALCULATIONS
+// === CALCULATIONS ===
+
 // Calculate the Average True Range (ATR)
 float atr_value = ta.atr(200) // ATR calculation with length of 200
 
@@ -103,15 +117,17 @@ bool pivot_low = not na(ta.pivotlow(close, pivot_left_bars, pivot_right_bars))
 
 // Create and store lines for pivot lows (support zones)
 if low[pivot_right_bars] > smoothed_value and pivot_low
-    pivot_line := line.new(bar_index[pivot_right_bars], low[pivot_right_bars], bar_index[pivot_right_bars] + 5, low[pivot_right_bars], color = color.new(up_trend_color, 80))
-    liquidity_lines_low.push(pivot_line)
+    pivot_line := line.new(bar_index[pivot_right_bars], low[pivot_right_bars], bar_index[pivot_right_bars] + 5, low[pivot_right_bars], color = color.new(up_trend_color, 75))
+    line.set_style(pivot_line, line.style_dotted) // Set to dotted line
+    liquidity_lines_low.safe_push(pivot_line)
     // Use 0 if volume is na
     volume_value := na(volume) ? 0.0 : math.sum(volume, pivot_right_bars + pivot_left_bars) / (pivot_right_bars + pivot_left_bars)
 
 // Create and store lines for pivot highs (resistance zones)
 if high[pivot_right_bars] < smoothed_value and pivot_high
-    pivot_line := line.new(bar_index[pivot_right_bars], high[pivot_right_bars], bar_index[pivot_right_bars] + 5, high[pivot_right_bars], color = color.new(down_trend_color, 80))
-    liquidity_lines_high.push(pivot_line)
+    pivot_line := line.new(bar_index[pivot_right_bars], high[pivot_right_bars], bar_index[pivot_right_bars] + 5, high[pivot_right_bars], color = color.new(down_trend_color, 75))
+    line.set_style(pivot_line, line.style_dotted) // Set to dotted line
+    liquidity_lines_high.safe_push(pivot_line)
     // Use 0 if volume is na
     volume_value := na(volume) ? 0.0 : math.sum(-volume, pivot_right_bars + pivot_left_bars) / (pivot_right_bars + pivot_left_bars)
 
@@ -145,7 +161,8 @@ color trend_color = is_trend_up ? up_trend_color : not is_trend_up ? down_trend_
 float volume_diff = up_trend_volume - down_trend_volume
 string delta_volume = (na(avg_volume_delta) or avg_volume_delta == 0) ? '0%' : str.tostring((volume_diff / avg_volume_delta) * 100, format.percent)
 
-// PLOT
+// === PLOT ===
+
 // Display labels for volume and trend statistics on the last bar
 if barstate.islast
     label.delete(label.new(bar_index, smoothed_value, 'Buy: ' + str.tostring(up_trend_volume, format.volume) + '\n Sell: ' + str.tostring(down_trend_volume, format.volume) + '\n Delta: ' + delta_volume, color = color.new(trend_color, 90), style = is_trend_up ? label.style_label_upper_left : label.style_label_lower_left, textcolor = chart.fg_color, size = size.small)[1])
