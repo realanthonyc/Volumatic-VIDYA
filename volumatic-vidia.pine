@@ -4,9 +4,9 @@
 //@version=6
 // ------------------------------------------------------------------
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
-//  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.5.8
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
+//  Forked from "Variable Index Dynamic Average" by BigBeluga
+//  v1.5.9
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -15,7 +15,7 @@ indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=tr
 // Input parameters for length, momentum, and source data
 int vidya_length = input.int(10, 'VIDYA Length') // Length of the VIDYA calculation
 int vidya_momentum = input.int(20, 'VIDYA Momentum') // Momentum length for VIDYA
-float band_distance = input.float(2, 'Distance factor for upper/lower bands', step = 0.1) // Distance factor for upper/lower bands
+float band_distance = input.float(2, 'Distance for VIDYA Lines', step = 0.1)
 
 // Define pivot parameters
 int pivot_bars = input.int(3, 'Pivot Bars') // User-configurable pivot strength
@@ -24,14 +24,14 @@ int pivot_right_bars = pivot_bars
 float source = input.source(close, 'Source') // Source for VIDYA calculation
 
 // Optimization: Max number of liquidity lines to keep (prevents memory bloat)
-int max_liquidity_lines = input.int(50, 'Max Liquidity Lines', minval=10, maxval=200)
+int max_liquidity_lines = input.int(30, 'Max Liquidity Lines', minval=5, maxval=200)
 
 // Define Colors
 color up_trend_color = input.color(#17dfad, 'Uptrend', group = 'Colors', inline = 'c') // Color for uptrend
 color down_trend_color = input.color(#dd326b, 'Downtrend', group = 'Colors', inline = 'c') // Color for downtrend
 bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors') // Enable/disable shadow fill
 int shadow_transparency = input.int(85, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors') // Transparency level for shadow fill
-color fill_transparent_color = input.color(#FFFFFF00, 'Fill Transparent Color', group = 'Colors') // Editable transparent color for fill gradient
+color fill_gradient_end_color = input.color(#FFFFFF00, 'Fill Gradient End Color', group = 'Colors') // Editable transparent color for fill gradient
 color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label Background', group = 'Colors') // Background color for volume labels
 
 // Initialize variables for line, volume, and trend state
@@ -117,7 +117,7 @@ bool pivot_low = not na(ta.pivotlow(close, pivot_left_bars, pivot_right_bars))
 
 // Create and store lines for pivot lows (support zones)
 if low[pivot_right_bars] > smoothed_value and pivot_low
-    pivot_line := line.new(bar_index[pivot_right_bars], low[pivot_right_bars], bar_index[pivot_right_bars] + 5, low[pivot_right_bars], color = color.new(up_trend_color, 75))
+    pivot_line := line.new(bar_index[pivot_right_bars], low[pivot_right_bars], bar_index[pivot_right_bars] + 5, low[pivot_right_bars], color = color.new(up_trend_color, 60))
     line.set_style(pivot_line, line.style_dotted) // Set to dotted line
     liquidity_lines_low.safe_push(pivot_line)
     // Use 0 if volume is na
@@ -125,7 +125,7 @@ if low[pivot_right_bars] > smoothed_value and pivot_low
 
 // Create and store lines for pivot highs (resistance zones)
 if high[pivot_right_bars] < smoothed_value and pivot_high
-    pivot_line := line.new(bar_index[pivot_right_bars], high[pivot_right_bars], bar_index[pivot_right_bars] + 5, high[pivot_right_bars], color = color.new(down_trend_color, 75))
+    pivot_line := line.new(bar_index[pivot_right_bars], high[pivot_right_bars], bar_index[pivot_right_bars] + 5, high[pivot_right_bars], color = color.new(down_trend_color, 60))
     line.set_style(pivot_line, line.style_dotted) // Set to dotted line
     liquidity_lines_high.safe_push(pivot_line)
     // Use 0 if volume is na
@@ -174,7 +174,7 @@ p1 = plot(smoothed_value, color = trend_color, linewidth = 2, style = plot.style
 p2 = plot(hl2, display = display.none, title = 'HL2 Reference')
 
 // Fill between the plot and the VIDYA line with customizable transparency
-fill(p1, p2, smoothed_value, hl2, color.new(trend_color, shadow ? shadow_transparency : 100), fill_transparent_color)
+fill(p1, p2, smoothed_value, hl2, color.new(trend_color, shadow ? shadow_transparency : 100), fill_gradient_end_color)
 
 // === ALERTS ===
 alertcondition(trend_cross_up, title = 'Trend Up', message = 'Trend has changed to Up')
