@@ -5,7 +5,7 @@
 // ------------------------------------------------------------------
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.5.7
+//  v1.5.8
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
@@ -30,6 +30,7 @@ int max_liquidity_lines = input.int(50, 'Max Liquidity Lines', minval=10, maxval
 color up_trend_color = input.color(#17dfad, 'Uptrend', group = 'Colors', inline = 'c') // Color for uptrend
 color down_trend_color = input.color(#dd326b, 'Downtrend', group = 'Colors', inline = 'c') // Color for downtrend
 bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors') // Enable/disable shadow fill
+int shadow_transparency = input.int(85, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors') // Transparency level for shadow fill
 color fill_transparent_color = input.color(#FFFFFF00, 'Fill Transparent Color', group = 'Colors') // Editable transparent color for fill gradient
 color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label Background', group = 'Colors') // Background color for volume labels
 
@@ -140,12 +141,12 @@ bool trend_cross_down = not is_trend_up and is_trend_up[1]
 bool trend_changed = trend_cross_up or trend_cross_down
 
 // Reset volume counters when trend changes
-if ta.change(trend_cross_up) or ta.change(trend_cross_down)
+if trend_changed
     up_trend_volume := 0.0
     down_trend_volume := 0.0
 
 // Accumulate volume during trends
-if not(ta.change(trend_cross_up) or ta.change(trend_cross_down))
+if not trend_changed
     // Skip accumulation if no volume
     if not na(volume)
         up_trend_volume := up_trend_volume + (close > open ? volume : 0)
@@ -173,7 +174,7 @@ p1 = plot(smoothed_value, color = trend_color, linewidth = 2, style = plot.style
 p2 = plot(hl2, display = display.none, title = 'HL2 Reference')
 
 // Fill between the plot and the VIDYA line with customizable transparency
-fill(p1, p2, smoothed_value, hl2, color.new(trend_color, shadow ? 80 : 100), fill_transparent_color)
+fill(p1, p2, smoothed_value, hl2, color.new(trend_color, shadow ? shadow_transparency : 100), fill_transparent_color)
 
 // === ALERTS ===
 alertcondition(trend_cross_up, title = 'Trend Up', message = 'Trend has changed to Up')
