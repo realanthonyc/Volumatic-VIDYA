@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
-//  v1.5.2
+//  v1.5.5
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -21,7 +21,6 @@ float band_distance = input.float(2, 'Distance factor for upper/lower bands', st
 int pivot_bars = input.int(3, 'Pivot Bars') // User-configurable pivot strength
 int pivot_left_bars = pivot_bars
 int pivot_right_bars = pivot_bars
-
 float source = input.source(close, 'Source') // Source for VIDYA calculation
 
 // Optimization: Max number of liquidity lines to keep (prevents memory bloat)
@@ -175,6 +174,6 @@ p2 = plot(hl2, display = display.none)
 // Fill between the plot and the VIDYA line with customizable transparency
 fill(p1, p2, smoothed_value, hl2, color.new(trend_color, shadow ? 80 : 100), fill_transparent_color)
 
-// Plot trend change markers (hidden by default)
-plotshape(series = trend_cross_up[1] ? smoothed_value[0] : na, title = 'Trend Up', style = shape.labelup, location = location.absolute, color = color.new(up_trend_color, 50), text = 'Up Arrow', textcolor = chart.fg_color, display = display.none)
-plotshape(series = trend_cross_down[1] ? smoothed_value[0] : na, title = 'Trend Down', style = shape.labeldown, location = location.absolute, color = color.new(down_trend_color, 50), text = 'Down Arrow', textcolor = chart.fg_color, display = display.none)
+// === ALERTS ===
+alertcondition(trend_cross_up, title = 'Trend Up', message = 'Trend has changed to Up')
+alertcondition(trend_cross_down, title = 'Trend Down', message = 'Trend has changed to Down')
