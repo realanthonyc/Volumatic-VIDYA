@@ -5,7 +5,7 @@
 // ------------------------------------------------------------------
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.5.6
+//  v1.5.7
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
@@ -49,7 +49,7 @@ var float down_trend_volume = 0.0
 
 // === FUNCTIONS ===
 
-// Define VIDYA function
+// Define VIDYA
 vidya_calc(src, vidya_length, vidya_momentum) =>
     float momentum = ta.change(src)
     float sum_pos_momentum = math.sum(momentum >= 0 ? momentum : 0.0, vidya_momentum)
