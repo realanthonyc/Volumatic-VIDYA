@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.7.1
+//  v1.7.2
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -78,6 +78,7 @@ method safe_push(array<line> line_array, line new_line) =>
 
 // Method to extend lines and add labels for liquidity levels (single 'if' for loop)
 method extend_liquidity_lines(array<line> line_array, float price_level, bool is_cross, volume_val) =>
+    // Only process lines within the last 5000 bars to optimize performance
     if line_array.size() > 0 and last_bar_index - bar_index < 5000
         int i = line_array.size() - 1
         while i >= 0
@@ -125,9 +126,9 @@ smoothed_value := ta.change(is_trend_up) ? na : smoothed_value
 
 // Calculate pivot highs and lows for price action
 // Original: bool pivot_high = not na(ta.pivothigh(pivot_left_bars, pivot_right_bars))
-bool pivot_high = not na(ta.pivothigh(high, pivot_left_bars, pivot_right_bars)) // Changed to explicitly use high
+bool pivot_high = not na(ta.pivothigh(high, pivot_left_bars, pivot_right_bars)) // Use high for accurate resistance
 // Original: bool pivot_low = not na(ta.pivotlow(close, pivot_left_bars, pivot_right_bars))
-bool pivot_low = not na(ta.pivotlow(low, pivot_left_bars, pivot_right_bars)) // Changed from close to low
+bool pivot_low = not na(ta.pivotlow(low, pivot_left_bars, pivot_right_bars)) // Use low for accurate support
 
 // Create and store lines for pivot lows (support zones)
 if low[pivot_right_bars] > smoothed_value and pivot_low
@@ -169,13 +170,13 @@ float volume_diff = up_trend_volume - down_trend_volume
 string delta_volume = (na(avg_volume) or avg_volume == 0) ? '0%' : str.tostring((volume_diff / avg_volume) * 100, format.percent)
 
 // === KDJ SIDEWAYS DETECTION ===
-float k_value = ta.stoch(close, high, low, 9) // KDJ length value
-k_value := ta.sma(k_value, 3) // Smooth K value
+float k_value = ta.stoch(close, high, low, 9) // KDJ length = 9
+k_value := ta.sma(k_value, 3) // Smooth K = 3
 bool k_in_middle = k_value >= 30 and k_value <= 70
 float k_change = math.abs(k_value - k_value[1])
 bool k_stable = k_change <= kdj_k_thresh
 bool is_sideways = k_in_middle and k_stable and not na(k_value[1])
-int fill_transparency = is_sideways ? 92 : (shadow ? shadow_transparency : 100)
+int fill_transparency = is_sideways ? 94 : (shadow ? shadow_transparency : 100)
 
 // === PLOT ===
 
@@ -194,4 +195,7 @@ fill(p1, p2, smoothed_value, hl2, color.new(trend_color, fill_transparency), fil
 // === ALERTS ===
 alertcondition(ta.change(is_trend_up) and is_trend_up, 'Trend Up', 'Trend has changed to Up')
 alertcondition(ta.change(is_trend_up) and not is_trend_up, 'Trend Down', 'Trend has changed to Down')
-alertcondition(ta.change(is_trend_up), 'Trend Changed', 'Trend has changed direction')
+// Single alert with dynamic direction message
+alertcondition(ta.change(is_trend_up), 'Trend Changed', 'Trend has changed to {{strategy.order.action}}')
+// Single alert which just about trend change
+alertcondition(ta.change(is_trend_up), 'Trend Direction Changed', 'Trend has changed direction')
