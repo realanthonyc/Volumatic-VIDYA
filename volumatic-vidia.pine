@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.7.5
+//  v1.7.6
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -31,7 +31,7 @@ int pivot_right_bars = pivot_bars
 // Optimization: Max number of liquidity lines to keep (prevents memory bloat)
 int max_liquidity_lines = input.int(30, 'Max Liquidity Lines', minval=5, maxval=200, group = 'General Settings')
 // KDJ sideways detection
-float kdj_k_thresh = input.float(13, 'Sideway Threshold (K)', step=1, group='General Settings')
+float kdj_k_thresh = input.float(10, 'Sideway Threshold (K)', step=1, group='General Settings')
 
 // Colors
 color up_trend_color = input.color(#17dfad, 'Uptrend', group = 'Colors', inline = 'c')
@@ -172,7 +172,7 @@ string delta_volume = (na(avg_volume) or avg_volume == 0) ? '0%' : str.tostring(
 // === KDJ SIDEWAYS DETECTION ===
 float k_value = ta.stoch(high, low, close, 9) // KDJ length = 9
 k_value := ta.sma(k_value, 3) // Smooth K = 3
-bool k_in_middle = k_value >= 30 and k_value <= 70
+bool k_in_middle = k_value >= 25 and k_value <= 75
 float k_change = math.abs(k_value - k_value[1])
 bool k_stable = k_change <= kdj_k_thresh
 bool is_sideways = k_in_middle and k_stable and not na(k_value[1])
@@ -195,7 +195,4 @@ fill(p1, p2, smoothed_value, hl2, color.new(trend_color, fill_transparency), fil
 // === ALERTS ===
 alertcondition(ta.change(is_trend_up) and is_trend_up, 'Trend Up', 'Trend has changed to Up')
 alertcondition(ta.change(is_trend_up) and not is_trend_up, 'Trend Down', 'Trend has changed to Down')
-// Single alert with dynamic direction message
-alertcondition(ta.change(is_trend_up), 'Trend Changed', 'Trend has changed to {{strategy.order.action}}')
-// Single alert which just about trend change
-alertcondition(ta.change(is_trend_up), 'Trend Direction Changed', 'Trend has changed direction')
+alertcondition(ta.change(is_trend_up), 'Trend Changed', 'Trend has changed direction')
