@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.6.2
+//  v1.6.9
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -22,22 +22,26 @@ int vidya_length_s = input.int(3, 'VIDYA Length', group = 'Sensitive Configurati
 int vidya_momentum_s = input.int(9, 'VIDYA Momentum', group = 'Sensitive Configuration')
 float band_distance_s = input.float(1.25, 'Distance for VIDYA Lines', step = 0.05, group = 'Sensitive Configuration')
 
+// General settings
+float source = input.source(close, 'Source', group = 'General Settings')
 // Define pivot parameters
-int pivot_bars = input.int(3, 'Pivot Bars', group = 'General Settings') // User-configurable pivot strength
+int pivot_bars = input.int(3, 'Pivot Bars', group = 'General Settings')
 int pivot_left_bars = pivot_bars
 int pivot_right_bars = pivot_bars
-float source = input.source(close, 'Source', group = 'General Settings') // Source for VIDYA calculation
-
 // Optimization: Max number of liquidity lines to keep (prevents memory bloat)
 int max_liquidity_lines = input.int(30, 'Max Liquidity Lines', minval=5, maxval=200, group = 'General Settings')
+// KDJ sideways detection
+float kdj_k_thresh = input.float(13, 'Sideway Threshold (K)', step=1, group='General Settings')
 
-// Define Colors
-color up_trend_color = input.color(#17dfad, 'Uptrend', group = 'Colors', inline = 'c') // Color for uptrend
-color down_trend_color = input.color(#dd326b, 'Downtrend', group = 'Colors', inline = 'c') // Color for downtrend
-bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors') // Enable/disable shadow fill
-int shadow_transparency = input.int(85, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors') // Transparency level for shadow fill
-color fill_gradient_end_color = input.color(#FFFFFF00, 'Fill Gradient End Color', group = 'Colors') // Editable transparent color for fill gradient
-color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label Background', group = 'Colors') // Background color for volume labels
+// Colors
+color up_trend_color = input.color(#17dfad, 'Uptrend', group = 'Colors', inline = 'c')
+color down_trend_color = input.color(#dd326b, 'Downtrend', group = 'Colors', inline = 'c')
+bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors')
+int shadow_transparency = input.int(82, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors')
+color fill_gradient_end_color = input.color(color.rgb(255, 255, 255, 100), 'Fill Gradient End Color', group = 'Colors')
+color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label Background', group = 'Colors')
+
+// === INITIALIZATION ===
 
 // Initialize variables for line, volume, and trend state
 var line pivot_line = na // Variable for storing line references
@@ -93,7 +97,7 @@ method extend_liquidity_lines(array<line> line_array, float price_level, bool is
 // === CALCULATIONS ===
 
 // Calculate the Average True Range (ATR)
-float atr_value = ta.atr(200) // ATR calculation with length of 200
+float atr_value = ta.atr(200)
 
 // Switch to sensitive settings for not daily or higher timeframes
 bool is_daily_or_higher = timeframe.isdaily or timeframe.isweekly or timeframe.ismonthly
@@ -102,7 +106,7 @@ int vidya_length_active = use_sensitive_config ? vidya_length_s : vidya_length
 int vidya_momentum_active = use_sensitive_config ? vidya_momentum_s : vidya_momentum
 float band_distance_active = use_sensitive_config ? band_distance_s : band_distance
 
-// Calculate the VIDYA (Variable Index Dynamic Average)
+// Calculate the VIDYA
 float vidya_value = vidya_calc(source, vidya_length_active, vidya_momentum_active)
 
 // Calculate upper and lower bands based on VIDYA and ATR
@@ -116,12 +120,8 @@ if ta.crossunder(source, lower_band)
     is_trend_up := false
 
 // Set trend-based smoothing variable
-if is_trend_up
-    smoothed_value := lower_band
-if not is_trend_up
-    smoothed_value := upper_band
-if ta.change(is_trend_up)
-    smoothed_value := na
+smoothed_value := is_trend_up ? lower_band : upper_band
+smoothed_value := ta.change(is_trend_up) ? na : smoothed_value
 
 // Calculate pivot highs and lows for price action
 bool pivot_high = not na(ta.pivothigh(pivot_left_bars, pivot_right_bars))
@@ -130,7 +130,7 @@ bool pivot_low = not na(ta.pivotlow(close, pivot_left_bars, pivot_right_bars))
 // Create and store lines for pivot lows (support zones)
 if low[pivot_right_bars] > smoothed_value and pivot_low
     pivot_line := line.new(bar_index[pivot_right_bars], low[pivot_right_bars], bar_index[pivot_right_bars] + 5, low[pivot_right_bars], color = color.new(up_trend_color, 60))
-    line.set_style(pivot_line, line.style_dotted) // Set to dotted line
+    line.set_style(pivot_line, line.style_dotted)
     liquidity_lines_low.safe_push(pivot_line)
     // Use 0 if volume is na
     volume_value := na(volume) ? 0.0 : math.sum(volume, pivot_right_bars + pivot_left_bars) / (pivot_right_bars + pivot_left_bars)
@@ -138,7 +138,7 @@ if low[pivot_right_bars] > smoothed_value and pivot_low
 // Create and store lines for pivot highs (resistance zones)
 if high[pivot_right_bars] < smoothed_value and pivot_high
     pivot_line := line.new(bar_index[pivot_right_bars], high[pivot_right_bars], bar_index[pivot_right_bars] + 5, high[pivot_right_bars], color = color.new(down_trend_color, 60))
-    line.set_style(pivot_line, line.style_dotted) // Set to dotted line
+    line.set_style(pivot_line, line.style_dotted)
     liquidity_lines_high.safe_push(pivot_line)
     // Use 0 if volume is na
     volume_value := na(volume) ? 0.0 : math.sum(-volume, pivot_right_bars + pivot_left_bars) / (pivot_right_bars + pivot_left_bars)
@@ -147,32 +147,33 @@ if high[pivot_right_bars] < smoothed_value and pivot_high
 liquidity_lines_high.extend_liquidity_lines(smoothed_value, true, volume_value)
 liquidity_lines_low.extend_liquidity_lines(smoothed_value, false, volume_value)
 
-// Detect changes in the trend direction
-bool trend_cross_up = not is_trend_up[1] and is_trend_up
-bool trend_cross_down = not is_trend_up and is_trend_up[1]
-bool trend_changed = trend_cross_up or trend_cross_down
-
-// Reset volume counters when trend changes
+// Detect and reset volume counters when trend changes, else accumulate volume
+bool trend_changed = ta.change(is_trend_up)
 if trend_changed
     up_trend_volume := 0.0
     down_trend_volume := 0.0
-
-// Accumulate volume during trends
-if not trend_changed
-    // Skip accumulation if no volume
-    if not na(volume)
-        up_trend_volume := up_trend_volume + (close > open ? volume : 0)
-        down_trend_volume := down_trend_volume + (close < open ? volume : 0)
+else if not na(volume)
+    up_trend_volume += close > open ? volume : 0
+    down_trend_volume += close < open ? volume : 0
 
 // Calculate average volume
 float avg_volume_delta = (up_trend_volume + down_trend_volume) / 2
 
 // Determine the color of the trend
-color trend_color = is_trend_up ? up_trend_color : not is_trend_up ? down_trend_color : chart.fg_color
+color trend_color = is_trend_up ? up_trend_color : down_trend_color
 
 // Calculation of delta_volume — always show '0%' if avg is 0 or na
 float volume_diff = up_trend_volume - down_trend_volume
 string delta_volume = (na(avg_volume_delta) or avg_volume_delta == 0) ? '0%' : str.tostring((volume_diff / avg_volume_delta) * 100, format.percent)
+
+// === KDJ SIDEWAYS DETECTION ===
+float k_value = ta.stoch(close, high, low, 9) // KDJ length value
+k_value := ta.sma(k_value, 3) // Smooth K value
+bool k_in_middle = k_value >= 30 and k_value <= 70
+float k_change = math.abs(k_value - k_value[1])
+bool k_stable = k_change <= kdj_k_thresh
+bool is_sideways = k_in_middle and k_stable and not na(k_value[1])
+int fill_transparency = is_sideways ? 92 : (shadow ? shadow_transparency : 100)
 
 // === PLOT ===
 
@@ -185,10 +186,10 @@ if barstate.islast
 p1 = plot(smoothed_value, color = trend_color, linewidth = 2, style = plot.style_linebr, title = 'VIDYA Trend Lines')
 p2 = plot(hl2, display = display.none, title = 'HL2 Reference')
 
-// Fill between the plot and the VIDYA line with customizable transparency
-fill(p1, p2, smoothed_value, hl2, color.new(trend_color, shadow ? shadow_transparency : 100), fill_gradient_end_color)
+// Fill between VIDYA trend line and HL2 with gradient fill
+fill(p1, p2, smoothed_value, hl2, color.new(trend_color, fill_transparency), fill_gradient_end_color)
 
 // === ALERTS ===
-alertcondition(trend_cross_up, title = 'Trend Up', message = 'Trend has changed to Up')
-alertcondition(trend_cross_down, title = 'Trend Down', message = 'Trend has changed to Down')
-alertcondition(trend_changed, title = 'Trend Changed', message = 'Trend has changed direction')
+alertcondition(ta.change(is_trend_up) and is_trend_up, 'Trend Up', 'Trend has changed to Up')
+alertcondition(ta.change(is_trend_up) and not is_trend_up, 'Trend Down', 'Trend has changed to Down')
+alertcondition(ta.change(is_trend_up), 'Trend Changed', 'Trend has changed direction')
