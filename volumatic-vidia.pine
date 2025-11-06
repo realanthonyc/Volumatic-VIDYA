@@ -6,25 +6,30 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.5.9
+//  v1.6.2
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
 // === INPUTS ===
 
-// Input parameters for length, momentum, and source data
-int vidya_length = input.int(10, 'VIDYA Length') // Length of the VIDYA calculation
-int vidya_momentum = input.int(20, 'VIDYA Momentum') // Momentum length for VIDYA
-float band_distance = input.float(2, 'Distance for VIDYA Lines', step = 0.1)
+// Regular configuration for daily and higher timeframes
+int vidya_length = input.int(10, 'VIDYA Length', group = 'Regular Configuration') // Length of the VIDYA calculation
+int vidya_momentum = input.int(20, 'VIDYA Momentum', group = 'Regular Configuration') // Momentum length for VIDYA
+float band_distance = input.float(2.00, 'Distance for VIDYA Lines', step = 0.05, group = 'Regular Configuration') // Multiplier for ATR to set band distance
+
+// Sensitive configuration for lower timeframes
+int vidya_length_s = input.int(3, 'VIDYA Length', group = 'Sensitive Configuration')
+int vidya_momentum_s = input.int(9, 'VIDYA Momentum', group = 'Sensitive Configuration')
+float band_distance_s = input.float(1.25, 'Distance for VIDYA Lines', step = 0.05, group = 'Sensitive Configuration')
 
 // Define pivot parameters
-int pivot_bars = input.int(3, 'Pivot Bars') // User-configurable pivot strength
+int pivot_bars = input.int(3, 'Pivot Bars', group = 'General Settings') // User-configurable pivot strength
 int pivot_left_bars = pivot_bars
 int pivot_right_bars = pivot_bars
-float source = input.source(close, 'Source') // Source for VIDYA calculation
+float source = input.source(close, 'Source', group = 'General Settings') // Source for VIDYA calculation
 
 // Optimization: Max number of liquidity lines to keep (prevents memory bloat)
-int max_liquidity_lines = input.int(30, 'Max Liquidity Lines', minval=5, maxval=200)
+int max_liquidity_lines = input.int(30, 'Max Liquidity Lines', minval=5, maxval=200, group = 'General Settings')
 
 // Define Colors
 color up_trend_color = input.color(#17dfad, 'Uptrend', group = 'Colors', inline = 'c') // Color for uptrend
@@ -90,12 +95,19 @@ method extend_liquidity_lines(array<line> line_array, float price_level, bool is
 // Calculate the Average True Range (ATR)
 float atr_value = ta.atr(200) // ATR calculation with length of 200
 
+// Switch to sensitive settings for not daily or higher timeframes
+bool is_daily_or_higher = timeframe.isdaily or timeframe.isweekly or timeframe.ismonthly
+bool use_sensitive_config = not is_daily_or_higher
+int vidya_length_active = use_sensitive_config ? vidya_length_s : vidya_length
+int vidya_momentum_active = use_sensitive_config ? vidya_momentum_s : vidya_momentum
+float band_distance_active = use_sensitive_config ? band_distance_s : band_distance
+
 // Calculate the VIDYA (Variable Index Dynamic Average)
-float vidya_value = vidya_calc(source, vidya_length, vidya_momentum)
+float vidya_value = vidya_calc(source, vidya_length_active, vidya_momentum_active)
 
 // Calculate upper and lower bands based on VIDYA and ATR
-float upper_band = vidya_value + atr_value * band_distance
-float lower_band = vidya_value - atr_value * band_distance
+float upper_band = vidya_value + atr_value * band_distance_active
+float lower_band = vidya_value - atr_value * band_distance_active
 
 // Detect trend direction using crossovers of source with bands
 if ta.crossover(source, upper_band)
