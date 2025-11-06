@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.7.0
+//  v1.7.1
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -158,15 +158,15 @@ else if not na(volume)
     up_trend_volume += close > open ? volume : 0
     down_trend_volume += close < open ? volume : 0
 
-// Calculate average volume
-float avg_volume_delta = (up_trend_volume + down_trend_volume) / 2
+// Average traded volume across both uptrend and downtrend bars
+float avg_volume = (up_trend_volume + down_trend_volume) / 2
 
 // Determine the color of the trend
 color trend_color = is_trend_up ? up_trend_color : down_trend_color
 
 // Calculation of delta_volume — always show '0%' if avg is 0 or na
 float volume_diff = up_trend_volume - down_trend_volume
-string delta_volume = (na(avg_volume_delta) or avg_volume_delta == 0) ? '0%' : str.tostring((volume_diff / avg_volume_delta) * 100, format.percent)
+string delta_volume = (na(avg_volume) or avg_volume == 0) ? '0%' : str.tostring((volume_diff / avg_volume) * 100, format.percent)
 
 // === KDJ SIDEWAYS DETECTION ===
 float k_value = ta.stoch(close, high, low, 9) // KDJ length value
