@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.6.9
+//  v1.7.0
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -37,7 +37,7 @@ float kdj_k_thresh = input.float(13, 'Sideway Threshold (K)', step=1, group='Gen
 color up_trend_color = input.color(#17dfad, 'Uptrend', group = 'Colors', inline = 'c')
 color down_trend_color = input.color(#dd326b, 'Downtrend', group = 'Colors', inline = 'c')
 bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors')
-int shadow_transparency = input.int(82, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors')
+int shadow_transparency = input.int(85, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors')
 color fill_gradient_end_color = input.color(color.rgb(255, 255, 255, 100), 'Fill Gradient End Color', group = 'Colors')
 color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label Background', group = 'Colors')
 
@@ -124,8 +124,10 @@ smoothed_value := is_trend_up ? lower_band : upper_band
 smoothed_value := ta.change(is_trend_up) ? na : smoothed_value
 
 // Calculate pivot highs and lows for price action
-bool pivot_high = not na(ta.pivothigh(pivot_left_bars, pivot_right_bars))
-bool pivot_low = not na(ta.pivotlow(close, pivot_left_bars, pivot_right_bars))
+// Original: bool pivot_high = not na(ta.pivothigh(pivot_left_bars, pivot_right_bars))
+bool pivot_high = not na(ta.pivothigh(high, pivot_left_bars, pivot_right_bars)) // Changed to explicitly use high
+// Original: bool pivot_low = not na(ta.pivotlow(close, pivot_left_bars, pivot_right_bars))
+bool pivot_low = not na(ta.pivotlow(low, pivot_left_bars, pivot_right_bars)) // Changed from close to low
 
 // Create and store lines for pivot lows (support zones)
 if low[pivot_right_bars] > smoothed_value and pivot_low
