@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.7.3
+//  v1.7.5
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -37,7 +37,7 @@ float kdj_k_thresh = input.float(13, 'Sideway Threshold (K)', step=1, group='Gen
 color up_trend_color = input.color(#17dfad, 'Uptrend', group = 'Colors', inline = 'c')
 color down_trend_color = input.color(#dd326b, 'Downtrend', group = 'Colors', inline = 'c')
 bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors')
-int shadow_transparency = input.int(85, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors')
+int shadow_transparency = input.int(82, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors')
 color fill_gradient_end_color = input.color(color.rgb(255, 255, 255, 100), 'Fill Gradient End Color', group = 'Colors')
 color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label Background', group = 'Colors')
 
@@ -170,7 +170,7 @@ float volume_diff = up_trend_volume - down_trend_volume
 string delta_volume = (na(avg_volume) or avg_volume == 0) ? '0%' : str.tostring((volume_diff / avg_volume) * 100, format.percent)
 
 // === KDJ SIDEWAYS DETECTION ===
-float k_value = ta.stoch(close, high, low, 9) // KDJ length = 9
+float k_value = ta.stoch(high, low, close, 9) // KDJ length = 9
 k_value := ta.sma(k_value, 3) // Smooth K = 3
 bool k_in_middle = k_value >= 30 and k_value <= 70
 float k_change = math.abs(k_value - k_value[1])
