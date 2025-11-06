@@ -6,9 +6,9 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.7.2
+//  v1.7.3
 // ------------------------------------------------------------------
-indicator(title="Volumatic VIDYA Optimized ", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
+indicator(title="Volumatic VIDYA Optimized", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
 // === INPUTS ===
 
@@ -160,7 +160,7 @@ else if not na(volume)
     down_trend_volume += close < open ? volume : 0
 
 // Average traded volume across both uptrend and downtrend bars
-float avg_volume = (up_trend_volume + down_trend_volume) / 2
+float avg_volume = math.avg(up_trend_volume, down_trend_volume)
 
 // Determine the color of the trend
 color trend_color = is_trend_up ? up_trend_color : down_trend_color
