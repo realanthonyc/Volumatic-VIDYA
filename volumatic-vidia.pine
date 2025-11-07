@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.8.2
+//  v1.8.3
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -126,28 +126,28 @@ smoothed_value := is_trend_up ? lower_band : upper_band
 smoothed_value := ta.change(is_trend_up) ? na : smoothed_value
 
 // Calculate pivot highs and lows for price action
-// Original: bool pivot_high = not na(ta.pivothigh(pivot_left_bars, pivot_right_bars))
 bool pivot_high = not na(ta.pivothigh(high, pivot_left_bars, pivot_right_bars)) // Use high for accurate resistance
-// Original: bool pivot_low = not na(ta.pivotlow(close, pivot_left_bars, pivot_right_bars))
 bool pivot_low = not na(ta.pivotlow(low, pivot_left_bars, pivot_right_bars)) // Use low for accurate support
+
+// Pre-calculate volume window and summed volume for consistency
+int volume_window = math.max(1, pivot_right_bars + pivot_left_bars)
+float summed_volume = math.sum(volume, volume_window)
+float avg_volume_up = na(volume) or na(summed_volume) ? 0.0 : summed_volume / volume_window
+float avg_volume_down = -avg_volume_up  // Negative for downtrend representation
 
 // Create and store lines for pivot lows (support zones)
 if low[pivot_right_bars] > smoothed_value and pivot_low
     pivot_line := line.new(bar_index[pivot_right_bars], low[pivot_right_bars], bar_index[pivot_right_bars] + 5, low[pivot_right_bars], color = color.new(up_trend_color, 60))
     line.set_style(pivot_line, line.style_dotted)
     liquidity_lines_low.safe_push(pivot_line)
-    int volume_window = math.max(1, pivot_right_bars + pivot_left_bars)
-    float summed_volume = math.sum(volume, volume_window)
-    volume_value := na(volume) or na(summed_volume) ? 0.0 : summed_volume / volume_window
+    volume_value := avg_volume_up
 
 // Create and store lines for pivot highs (resistance zones)
 if high[pivot_right_bars] < smoothed_value and pivot_high
     pivot_line := line.new(bar_index[pivot_right_bars], high[pivot_right_bars], bar_index[pivot_right_bars] + 5, high[pivot_right_bars], color = color.new(down_trend_color, 60))
     line.set_style(pivot_line, line.style_dotted)
     liquidity_lines_high.safe_push(pivot_line)
-    int volume_window = math.max(1, pivot_right_bars + pivot_left_bars)
-    float summed_volume_down = math.sum(volume, volume_window)
-    volume_value := na(volume) or na(summed_volume_down) ? 0.0 : -summed_volume_down / volume_window
+    volume_value := avg_volume_down
 
 // Extend lines to track price movements
 liquidity_lines_high.extend_liquidity_lines(smoothed_value, true, volume_value)
