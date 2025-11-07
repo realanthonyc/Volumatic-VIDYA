@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.8.1
+//  v1.8.2
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -179,7 +179,7 @@ bool k_in_middle = k_value >= 25 and k_value <= 75
 float k_change = math.abs(k_value - k_value[1])
 bool k_stable = k_change <= kdj_k_thresh
 bool is_sideways = k_in_middle and k_stable and not na(k_value[1])
-int fill_transparency = is_sideways ? sideways_transparency : (shadow ? shadow_transparency : 100)
+int fill_transparency = shadow ? (is_sideways ? sideways_transparency : shadow_transparency) : 100
 
 // === PLOT ===
 
