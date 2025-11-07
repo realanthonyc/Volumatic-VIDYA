@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.7.8
+//  v1.7.9
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
 
@@ -39,7 +39,7 @@ color down_trend_color = input.color(#dd326b, 'Downtrend', group = 'Colors', inl
 bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors')
 int shadow_transparency = input.int(82, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors')
 color fill_gradient_end_color = input.color(color.rgb(255, 255, 255, 100), 'Fill Gradient End Color', group = 'Colors')
-color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label Background', group = 'Colors')
+color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label', group = 'Colors')
 
 // === INITIALIZATION ===
 
@@ -187,9 +187,9 @@ if barstate.islast
     label.delete(label.new(bar_index, smoothed_value, 'Buy: ' + str.tostring(up_trend_volume, format.volume) + '\n Sell: ' + str.tostring(down_trend_volume, format.volume) + '\n Delta: ' + delta_volume, color = color.new(trend_color, 90), style = is_trend_up ? label.style_label_upper_left : label.style_label_lower_left, textcolor = chart.fg_color, size = size.small)[1])
     label.delete(label.new(bar_index, smoothed_value, text = '●', color = color.rgb(0, 0, 0, 100), textcolor = trend_color, style = label.style_label_center, size = size.small)[1])
 
-// Plot the VIDYA trend line
-p1 = plot(smoothed_value, color = trend_color, linewidth = 2, style = plot.style_linebr, title = 'VIDYA Trend Lines')
-p2 = plot(hl2, display = display.none, title = 'HL2 Reference')
+// Plot the VIDYA trend line and HL2 reference line
+p1 = plot(smoothed_value, color = color.new(trend_color, 15), style = plot.style_linebr, linewidth = 2, linestyle=plot.linestyle_dotted, title = 'VIDYA Trend Lines')
+p2 = plot(hl2, color = color.new(trend_color, 30), linewidth = 2, display = display.none, title = 'HL2 Reference')
 
 // Fill between VIDYA trend line and HL2 with gradient fill
 fill(p1, p2, smoothed_value, hl2, color.new(trend_color, fill_transparency), fill_gradient_end_color)
