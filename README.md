@@ -9,7 +9,7 @@ Pine Script® v6
 Volumatic VIDYA Optimized builds on BigBeluga’s original script and extends it with adaptive trend logic, liquidity tracking, and contextual visuals. The goal is to highlight the current bias, show where liquidity sits, and quantify volume pressure without clutter or repaint-heavy tricks.
 
 ## What the script does
-- **Adaptive VIDYA + ATR bands** that flip trend bias automatically (regular settings for higher TFs, sensitive set for intraday).
+- **Adaptive VIDYA + ATR bands** that flip trend bias automatically, with dual configuration sets — Regular (for daily & higher timeframes) and Sensitive (for intraday) — providing smoother trends on higher TFs and faster reactions on lower TFs.
 - **Liquidity zones** drawn from pivot highs/lows with dotted extensions, capped arrays, and volume markers when price taps the line.
 - **Volume delta stats** showing total buy, sell, and % delta for the active trend on the latest bar.
 - **Sideways filter & visuals** using KDJ(9,3); sideways zones fade the gradient, while shadow/label colors stay user controlled.
