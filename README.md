@@ -1,21 +1,29 @@
-# Volumatic-VIDYA
-Volumatic VIDYA for TradingView
+# Volumatic VIDYA Optimized for TradingView
 
-**Volumatic VIDYA Optimized** is a Pine Script v6 indicator that combines a Variable Index Dynamic Average (VIDYA) with ATR-based dynamic bands, pivot-based liquidity zones, and volume delta analysis to identify trend direction and high-probability support/resistance levels.
+© realanthonyc  
+https://x.com/anthonycxc | https://www.tradingview.com/u/realanthonyc
 
-It is forked from the excellent work by BigBeluga: "Variable Index Dynamic Average" / "Volumatic VIDYA" indicator.
+Pine Script® v6
 
-Key Features:
-- Adaptive VIDYA Trend Line: Smooths price action based on momentum (CMO), switching between upper/lower ATR bands during uptrends/downtrends.
-- Liquidity Zones: Detects swing pivots **using precise high/low prices for accurate support/resistance** and draws extendable dotted lines at key levels; short lines terminate with volume-labeled markers when price crosses.
-- Volume Delta Tracking: Accumulates buy/sell volume per trend, displaying Buy/Sell volumes and % **Delta** on the last bar.
-- Visual Enhancements: Trend-colored fill with optional shadow, clean labels, and circle markers at liquidity grabs. **Automatically fades fill during sideways markets using KDJ(9,3) detection for cleaner charts.**
-- Performance Optimized: Huge performance improvement. Limits lines/labels to prevent lag; uses safe array management and processes only recent bars.
+## Overview
+Volumatic VIDYA Optimized builds on BigBeluga’s original script and extends it with adaptive trend logic, liquidity tracking, and contextual visuals. The goal is to highlight the current bias, show where liquidity sits, and quantify volume pressure without clutter or repaint-heavy tricks.
 
-Alerts:
-- Trend Up: Trend has changed to Up
-- Trend Down: Trend has changed to Down
-- Trend Changed: Trend has changed to {{strategy.order.action}} (auto shows "up" or "down")
-- Trend Direction Changed: Trend has changed direction
+## What the script does
+- **Adaptive VIDYA + ATR bands** that flip trend bias automatically (regular settings for higher TFs, sensitive set for intraday).
+- **Liquidity zones** drawn from pivot highs/lows with dotted extensions, capped arrays, and volume markers when price taps the line.
+- **Volume delta stats** showing total buy, sell, and % delta for the active trend on the latest bar.
+- **Sideways filter & visuals** using KDJ(9,3); sideways zones fade the gradient, while shadow/label colors stay user controlled.
+- **Huge Performance improvement** by rewriting many parts of the script. Limits lines/labels to prevent lag; uses safe array management and processes only recent bars.
 
-Ideal for trend-following, liquidity hunting, and volume-confirmed reversals. Clean, efficient, and highly visual.
+## What’s on the chart
+- Dotted VIDYA line + optional HL2 reference with gradient fill between them.
+- Liquidity lines with circle/volume labels when they’re hit.
+- Last-bar label summarizing Buy, Sell, and Delta volume.
+
+## Alerts
+1. `Trend Up` – trend flipped bullish.  
+2. `Trend Down` – trend flipped bearish.  
+3. `Trend Changed` – fires on any flip if you prefer one alert to route logic yourself.
+
+## Changelog
+Please refer to the release notes.
