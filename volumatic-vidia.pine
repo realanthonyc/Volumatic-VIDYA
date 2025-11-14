@@ -6,9 +6,9 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.8.3
+//  v1.8.5
 // ------------------------------------------------------------------
-indicator(title="Volumatic VIDYA Optimized", shorttitle="Vol-VIDYA", overlay=true, max_lines_count=500, max_labels_count=500)
+indicator(title="Volumatic VIDYA Optimized", shorttitle="Vol-VIDYA", overlay=true, precision=2, max_lines_count=500, max_labels_count=500)
 
 // === INPUTS ===
 
@@ -28,8 +28,6 @@ float source = input.source(close, 'Source', group = 'General Settings')
 int pivot_bars = input.int(3, 'Pivot Bars', group = 'General Settings', tooltip = 'Number of bars on each side of the pivot used to confirm support/resistance.')
 int pivot_left_bars = pivot_bars
 int pivot_right_bars = pivot_bars
-// KDJ sideways detection
-float kdj_k_thresh = input.float(10, 'Sideway Threshold (K)', step=1, group='General Settings', tooltip = 'Maximum K value change to consider market sideways, lower = stricter.')
 // Optimization: Max number of liquidity lines to keep (prevents memory bloat)
 int max_liquidity_lines = input.int(30, 'Max Liquidity Lines', minval=5, maxval=200, group = 'General Settings', tooltip = 'Maximum number of liquidity lines to avoid memory bloat.')
 
@@ -37,8 +35,7 @@ int max_liquidity_lines = input.int(30, 'Max Liquidity Lines', minval=5, maxval=
 color up_trend_color = input.color(#17dfad, 'Uptrend', group = 'Colors', inline = 'c')
 color down_trend_color = input.color(#dd326b, 'Downtrend', group = 'Colors', inline = 'c')
 bool shadow = input.bool(true, 'Enable Shadow', group = 'Colors')
-int shadow_transparency = input.int(82, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors')
-int sideways_transparency = input.int(94, 'Sideways Transparency', minval = 0, maxval = 100, group = 'Colors')
+int shadow_transparency = input.int(92, 'Shadow Transparency', minval = 0, maxval = 100, group = 'Colors')
 color fill_gradient_end_color = input.color(color.rgb(255, 255, 255, 100), 'Fill Gradient End Color', group = 'Colors')
 color volume_label_bg_color = input.color(color.rgb(255, 255, 255, 60), 'Volume Label', group = 'Colors')
 
@@ -172,14 +169,8 @@ color trend_color = is_trend_up ? up_trend_color : down_trend_color
 float volume_diff = up_trend_volume - down_trend_volume
 string delta_volume = (na(avg_volume) or avg_volume == 0) ? '0%' : str.tostring((volume_diff / avg_volume) * 100, format.percent)
 
-// === KDJ SIDEWAYS DETECTION ===
-float k_value = ta.stoch(high, low, close, 9) // KDJ length = 9
-k_value := ta.sma(k_value, 3) // Smooth K = 3
-bool k_in_middle = k_value >= 25 and k_value <= 75
-float k_change = math.abs(k_value - k_value[1])
-bool k_stable = k_change <= kdj_k_thresh
-bool is_sideways = k_in_middle and k_stable and not na(k_value[1])
-int fill_transparency = shadow ? (is_sideways ? sideways_transparency : shadow_transparency) : 100
+// === SHADOW ===
+int fill_transparency = shadow ? shadow_transparency : 100
 
 // === PLOT ===
 
