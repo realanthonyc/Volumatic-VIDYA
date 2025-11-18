@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average) Optimized
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.8.5
+//  v1.8.7
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA Optimized", shorttitle="Vol-VIDYA", overlay=true, precision=2, max_lines_count=500, max_labels_count=500)
 
@@ -17,10 +17,10 @@ int vidya_length = input.int(10, 'VIDYA Length', group = 'Regular Configuration'
 int vidya_momentum = input.int(20, 'VIDYA Momentum', group = 'Regular Configuration') // Momentum length for VIDYA
 float band_distance = input.float(2.00, 'Distance for VIDYA Lines', step = 0.05, group = 'Regular Configuration') // Multiplier for ATR to set band distance
 
-// Sensitive configuration for lower timeframes
-int vidya_length_s = input.int(3, 'VIDYA Length', group = 'Sensitive Configuration')
-int vidya_momentum_s = input.int(9, 'VIDYA Momentum', group = 'Sensitive Configuration')
-float band_distance_s = input.float(1.25, 'Distance for VIDYA Lines', step = 0.05, group = 'Sensitive Configuration')
+// Sensitivity configuration for lower timeframes
+int vidya_length_s = input.int(3, 'VIDYA Length', group = 'Sensitivity Configuration')
+int vidya_momentum_s = input.int(9, 'VIDYA Momentum', group = 'Sensitivity Configuration')
+float band_distance_s = input.float(1.25, 'Distance for VIDYA Lines', step = 0.05, group = 'Sensitivity Configuration')
 
 // General settings
 float source = input.source(close, 'Source', group = 'General Settings')
@@ -187,6 +187,7 @@ p2 = plot(hl2, color = color.new(trend_color, 30), linewidth = 2, display = disp
 fill(p1, p2, smoothed_value, hl2, color.new(trend_color, fill_transparency), fill_gradient_end_color)
 
 // === ALERTS ===
-alertcondition(ta.change(is_trend_up) and is_trend_up, 'Trend Up', 'Trend has changed to Up')
-alertcondition(ta.change(is_trend_up) and not is_trend_up, 'Trend Down', 'Trend has changed to Down')
-alertcondition(ta.change(is_trend_up), 'Trend Changed', 'Trend has changed direction')
+// Alerts now fire only when the trend change is confirmed by the close of the next bar (second bar after flip)
+alertcondition(ta.change(is_trend_up[1]) and is_trend_up[1], title='Trend Up (Confirmed)', message='{{ticker}}: VIDYA trend has changed to UP')
+alertcondition(ta.change(is_trend_up[1]) and not is_trend_up[1], title='Trend Down (Confirmed)', message='{{ticker}}: VIDYA trend has changed to DOWN')
+alertcondition(ta.change(is_trend_up[1]), title='Trend Changed (Confirmed)', message='{{ticker}}: VIDYA trend direction changed')
