@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average)
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v2.0.0
+//  v2.0.2
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA", shorttitle="Vol-VIDYA", overlay=true, precision=2, max_lines_count=500, max_labels_count=500)
 
@@ -28,8 +28,6 @@ float source = input.source(close, 'Source', group='General Settings')
 // Define pivot parameters
 int pivot_bars_lt_1h = input.int(3, 'Pivot Bars: Below 1h', minval=1, group='General Settings', tooltip='Number of bars required on both left and right to confirm a valid swing high or low.')
 int pivot_bars_gte_1h = input.int(5, 'Pivot Bars: 1h or Above', minval=1, group='General Settings')
-
-// Logic to use the correct pivot length based on timeframe
 bool is_lt_1h = timeframe.isseconds or (timeframe.isminutes and timeframe.multiplier < 60)
 int pivot_bars = is_lt_1h ? pivot_bars_lt_1h : pivot_bars_gte_1h
 int pivot_left_bars = pivot_bars
@@ -236,9 +234,12 @@ int fill_transparency = shadow ? shadow_transparency : 100
 
 // === PLOT ===
 
+// Determine box color based on Delta
+color delta_bg_color = volume_diff >= 0 ? up_trend_color : down_trend_color
+
 // Display labels for volume and trend statistics on the last bar
 if barstate.islast
-    label.delete(label.new(bar_index, smoothed_value, 'Buy: ' + str.tostring(up_trend_volume, format.volume) + '\n Sell: ' + str.tostring(down_trend_volume, format.volume) + '\n Delta: ' + delta_volume, color = color.new(trend_color, 90), style = is_trend_up ? label.style_label_upper_left : label.style_label_lower_left, textcolor = chart.fg_color, size = size.small)[1])
+    label.delete(label.new(bar_index, smoothed_value, 'Buy: ' + str.tostring(up_trend_volume, format.volume) + '\n Sell: ' + str.tostring(down_trend_volume, format.volume) + '\n Delta: ' + delta_volume, color = color.new(delta_bg_color, 90), style = is_trend_up ? label.style_label_upper_left : label.style_label_lower_left, textcolor = chart.fg_color, size = size.small)[1])
     label.delete(label.new(bar_index, smoothed_value, text = '●', color = color.rgb(0, 0, 0, 100), textcolor = trend_color, style = label.style_label_center, size = size.small)[1])
 
 // Plot the VIDYA trend line and HL2 reference line
@@ -250,7 +251,7 @@ fill(p1, p2, smoothed_value, hl2, color.new(trend_color, fill_transparency), fil
 
 // === ALERTS ===
 
-// Alerts now fire only when the trend change is confirmed by the close of the next bar (second bar after flip)
-alertcondition(ta.change(is_trend_up[1]) and is_trend_up[1], title='Trend Up (Confirmed)', message='{{ticker}}: VIDYA trend has changed to UP')
-alertcondition(ta.change(is_trend_up[1]) and not is_trend_up[1], title='Trend Down (Confirmed)', message='{{ticker}}: VIDYA trend has changed to DOWN')
-alertcondition(ta.change(is_trend_up[1]), title='Trend Changed (Confirmed)', message='{{ticker}}: VIDYA trend direction changed')
+// Alerts fire only when the trend change is confirmed by the close of the next bar (second bar after flip)
+alertcondition(ta.change(is_trend_up[1]) and is_trend_up[1], title='Trend Up', message='{{ticker}}: VIDYA trend is UP')
+alertcondition(ta.change(is_trend_up[1]) and not is_trend_up[1], title='Trend Down', message='{{ticker}}: VIDYA trend is DOWN')
+alertcondition(ta.change(is_trend_up[1]), title='Trend Changed', message='{{ticker}}: VIDYA trend direction changed')
