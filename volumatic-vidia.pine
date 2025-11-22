@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average)
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.9.9
+//  v2.0.0
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA", shorttitle="Vol-VIDYA", overlay=true, precision=2, max_lines_count=500, max_labels_count=500)
 
@@ -24,15 +24,22 @@ float band_distance_s = input.float(1.25, 'Distance for VIDYA Lines', step=0.05,
 
 // General settings
 float source = input.source(close, 'Source', group='General Settings')
+
 // Define pivot parameters
-int pivot_bars = input.int(5, 'Pivot Bars', minval=1, group='General Settings', tooltip='Number of bars required on both left and right to confirm a valid swing high or low.')
+int pivot_bars_lt_1h = input.int(3, 'Pivot Bars: Below 1h', minval=1, group='General Settings', tooltip='Number of bars required on both left and right to confirm a valid swing high or low.')
+int pivot_bars_gte_1h = input.int(5, 'Pivot Bars: 1h or Above', minval=1, group='General Settings')
+
+// Logic to use the correct pivot length based on timeframe
+bool is_lt_1h = timeframe.isseconds or (timeframe.isminutes and timeframe.multiplier < 60)
+int pivot_bars = is_lt_1h ? pivot_bars_lt_1h : pivot_bars_gte_1h
 int pivot_left_bars = pivot_bars
 int pivot_right_bars = pivot_bars
+
 // Optimization: Max number of liquidity lines to keep to prevent memory bloat
 int max_liquidity_lines = input.int(30, 'Max Liquidity Lines', minval=5, maxval=200, group='General Settings', tooltip='Maximum number of liquidity lines to avoid memory bloat.')
 
 // Volume calculation options
-vol_calc_mode_tooltip = "Volume calculation method: \n3-Bars: Sum of the pivot bar and its left and right bars \nAverage: Mean volume across the pivot window \nPivot Bar: Volume of the pivot bar only \nPivot Window: Sum of volume across the entire pivot window"
+vol_calc_mode_tooltip = "Volume calculation method: \n3-Bars: Pivot bar + its left and right bars \nAverage: Mean volume across the pivot window \nPivot Bar: Volume of the pivot bar only \nPivot Window: Total volume of the pivot window"
 string vol_calc_mode = input.string("3-Bars", "Volume Calculation Mode", options = ["3-Bars", "Average", "Pivot Bar", "Pivot Window"], group="General Settings", tooltip=vol_calc_mode_tooltip)
 bool show_vol_labels = input.bool(false, "Show Liquidity Volume Labels", group="General Settings", tooltip="Toggle the text labels showing volume size. Disable to save visual space.")
 
@@ -112,7 +119,7 @@ method extend_liquidity_lines(array<line> line_array, array<float> volume_array,
                 label existing_marker_label = marker_label_array.get(i)
                 if not na(existing_marker_label)
                     label.delete(existing_marker_label)
-                label marker_label = label.new(bar_index - 1, price_level[1], text = '●', color = color.rgb(0, 0, 0, 100), textcolor = is_cross ? down_trend_color : up_trend_color, style = label.style_label_center, size = size.small)
+                label marker_label = label.new(bar_index - 1, price_level[1], text = '●', color = color.rgb(0, 0, 0, 100), textcolor = is_cross ? down_trend_color : up_trend_color, style = label.style_label_center, size = size.tiny)
                 marker_label_array.set(i, marker_label)
 
                 // Handle Volume Labels (Text) - Explicitly clean up reference if hidden
@@ -232,7 +239,7 @@ int fill_transparency = shadow ? shadow_transparency : 100
 // Display labels for volume and trend statistics on the last bar
 if barstate.islast
     label.delete(label.new(bar_index, smoothed_value, 'Buy: ' + str.tostring(up_trend_volume, format.volume) + '\n Sell: ' + str.tostring(down_trend_volume, format.volume) + '\n Delta: ' + delta_volume, color = color.new(trend_color, 90), style = is_trend_up ? label.style_label_upper_left : label.style_label_lower_left, textcolor = chart.fg_color, size = size.small)[1])
-    label.delete(label.new(bar_index, smoothed_value, text = '●', color = color.rgb(0, 0, 0, 100), textcolor = trend_color, style = label.style_label_center, size = size.normal)[1])
+    label.delete(label.new(bar_index, smoothed_value, text = '●', color = color.rgb(0, 0, 0, 100), textcolor = trend_color, style = label.style_label_center, size = size.small)[1])
 
 // Plot the VIDYA trend line and HL2 reference line
 p1 = plot(smoothed_value, color = color.new(trend_color, 15), style = plot.style_linebr, linewidth = 2, linestyle=plot.linestyle_dotted, title = 'VIDYA Trend Lines')
