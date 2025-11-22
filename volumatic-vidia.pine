@@ -6,7 +6,7 @@
 //  Volumatic VIDYA (Variable Index Dynamic Average)
 //  On Github: https://github.com/realanthonyc/Volumatic-VIDYA
 //  Forked from "Variable Index Dynamic Average" by BigBeluga
-//  v1.9.8
+//  v1.9.9
 // ------------------------------------------------------------------
 indicator(title="Volumatic VIDYA", shorttitle="Vol-VIDYA", overlay=true, precision=2, max_lines_count=500, max_labels_count=500)
 
@@ -25,15 +25,15 @@ float band_distance_s = input.float(1.25, 'Distance for VIDYA Lines', step=0.05,
 // General settings
 float source = input.source(close, 'Source', group='General Settings')
 // Define pivot parameters
-int pivot_bars = input.int(5, 'Pivot Bars', group='General Settings', tooltip='Number of bars required on both left and right to confirm a valid swing high or low.')
+int pivot_bars = input.int(5, 'Pivot Bars', minval=1, group='General Settings', tooltip='Number of bars required on both left and right to confirm a valid swing high or low.')
 int pivot_left_bars = pivot_bars
 int pivot_right_bars = pivot_bars
 // Optimization: Max number of liquidity lines to keep to prevent memory bloat
 int max_liquidity_lines = input.int(30, 'Max Liquidity Lines', minval=5, maxval=200, group='General Settings', tooltip='Maximum number of liquidity lines to avoid memory bloat.')
 
 // Volume calculation options
-vol_calc_mode_tooltip = "Volume calculation method: \n3-Bars: Sum of the pivot bar and its left and right bars \nPivot: Sum of volume across the entire pivot window \nAverage: The mean volume of the pivot window"
-string vol_calc_mode = input.string("3-Bars", "Volume Calculation Mode", options = ["3-Bars", "Pivot", "Average"], group="General Settings", tooltip=vol_calc_mode_tooltip)
+vol_calc_mode_tooltip = "Volume calculation method: \n3-Bars: Sum of the pivot bar and its left and right bars \nAverage: Mean volume across the pivot window \nPivot Bar: Volume of the pivot bar only \nPivot Window: Sum of volume across the entire pivot window"
+string vol_calc_mode = input.string("3-Bars", "Volume Calculation Mode", options = ["3-Bars", "Average", "Pivot Bar", "Pivot Window"], group="General Settings", tooltip=vol_calc_mode_tooltip)
 bool show_vol_labels = input.bool(false, "Show Liquidity Volume Labels", group="General Settings", tooltip="Toggle the text labels showing volume size. Disable to save visual space.")
 
 // Colors
@@ -164,18 +164,23 @@ bool pivot_low = not na(ta.pivotlow(low, pivot_left_bars, pivot_right_bars)) // 
 int volume_window = math.max(1, pivot_right_bars + pivot_left_bars)
 float summed_volume = math.sum(volume, volume_window)
 
-// Sum k-1, k, k+1 around the pivot bar
+// Sum of the pivot bar and its left and right bars
 float three_bar_volume = na
 if pivot_right_bars > 0
     float k_minus_one_volume = nz(volume[pivot_right_bars + 1], 0.0)
     float k_volume = nz(volume[pivot_right_bars], 0.0)
-    float k_plus_one_volume = nz(volume[pivot_right_bars - 1], 0.0)
+    float k_plus_one_volume = nz(volume[math.max(0, pivot_right_bars - 1)], 0.0)
     three_bar_volume := k_minus_one_volume + k_volume + k_plus_one_volume
+
+// Volume of the pivot bar only
+float pivot_bar_volume = nz(volume[math.max(0, pivot_right_bars)], 0.0)
 
 // Calculate Volume based on user selection
 float selected_volume_calc = switch vol_calc_mode
     "3-Bars" => nz(three_bar_volume, summed_volume)
-    "Pivot" => summed_volume
+    "Average" => (summed_volume / volume_window)
+    "Pivot Bar" => pivot_bar_volume
+    "Pivot Window" => summed_volume
     => (summed_volume / volume_window)
 float pivot_volume = na(volume) or na(selected_volume_calc) ? 0.0 : selected_volume_calc
 
